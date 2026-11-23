@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Food Delivery App Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday, warm, product walkthrough for a local restaurant owner
+   IDEA a design studio's prototype viewer: one phone in focus, screens indexed like a menu card
+   PICTURE the live phone screen, large, on its app's colour field
+   COLOUR customer: chilli red on turmeric; delivery partner: turmeric on charcoal; white chrome
+   TYPE Baloo 2 for titles, Inter for UI
+   LAYOUT laptop: index | phone on colour field | feature notes; phone: switch, phone, notes, one slim pager bar */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121417);--ink:light-dark(#1c1d21,#eceae6);--mut:light-dark(#61646c,#a3a6ad);--line:light-dark(#ebe7e1,#2a2d33);--soft:light-dark(#f6f3ee,#1b1e23);--red:#b5202a;--tur:#f4b400;--char:#1b1f27;--veg:#1e8e3e;--acc:var(--red);--field:light-dark(#f4b400,#6e5200)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+body[data-app=d]{--acc:light-dark(#1b1f27,#f4b400);--field:#1b1f27}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip;display:flex;flex-direction:column}
+h1,h2{font-family:"Baloo 2",Inter,sans-serif;line-height:1.05;letter-spacing:-.01em;margin:0}
+button{font:inherit;color:inherit}
+.hdr{flex:none;display:flex;align-items:center;gap:16px;padding:10px max(2.5vw,16px);border-bottom:1px solid var(--line);background:var(--bg);position:relative;z-index:3}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand svg{width:38px;height:38px;flex:none}
+.brand b{display:block;font-family:"Baloo 2";font-size:20px;line-height:1.1}
+.brand span{font-size:13px;color:var(--mut)}
+.seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg button{border:0;background:none;border-radius:10px;padding:9px 16px;min-height:44px;font-weight:600;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.seg button small{font-size:12px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--line)}
+.seg button[aria-selected=true][data-app=c]{background:var(--red);color:#fff}
+.seg button[aria-selected=true][data-app=d]{background:#1b1f27;color:#f4b400}
+.seg button[aria-selected=true] small{background:rgba(255,255,255,.2)}
+.seg button:focus-visible,.idx button:focus-visible,.nb:focus-visible,.pick:focus-visible{outline:3px solid var(--tur);outline-offset:2px}
+.main{flex:1;display:grid;grid-template-columns:270px minmax(0,1fr) 330px;min-height:0}
+.idx{border-right:1px solid var(--line);overflow-y:auto;padding:14px 10px 24px}
+.idx h3{margin:16px 10px 6px;font-size:13px;font-weight:600;color:var(--mut)}
+.idx h3:first-child{margin-top:2px}
+.idx button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:14px;min-height:40px}
+.idx button:hover{background:var(--soft)}
+.idx button i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--soft);flex:none;font-variant-numeric:tabular-nums}
+.idx button.on{background:var(--soft);font-weight:700}
+.idx button.on i{background:var(--acc);color:#fff}
+body[data-app=d] .idx button.on i{color:light-dark(#f4b400,#1b1f27)}
+.stage{position:relative;background:var(--field);display:grid;place-items:center;overflow:hidden;padding:24px 16px;touch-action:pan-y}
+.stage::before{content:"";position:absolute;inset:auto -10% -40% -10%;height:70%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.28),transparent);pointer-events:none}
+body[data-app=d] .stage::before{background:radial-gradient(closest-side,rgba(244,180,0,.18),transparent)}
+.fit{width:300px;height:620px;position:relative;transform-origin:center center}
+.info{border-left:1px solid var(--line);padding:28px 26px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.grpn{font-size:14px;font-weight:600;color:var(--acc)}
+body[data-app=d] .grpn{color:light-dark(#8a6400,#f4b400)}
+.info h2{font-size:clamp(30px,3vw,40px);text-wrap:balance}
+.info p{margin:0;font-size:16px;max-width:60ch}
+.prog{height:6px;border-radius:9px;background:var(--soft);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--acc);border-radius:9px;transition:width .3s}
+.count{font-size:14px;color:var(--mut);font-variant-numeric:tabular-nums}
+.navs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.nb{border:1.5px solid var(--line);background:var(--bg);border-radius:12px;min-height:48px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.nb.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+body[data-app=d] .nb.pri{color:light-dark(#f4b400,#1b1f27)}
+.nb:disabled{opacity:.4;cursor:default}
+.nb svg{width:18px;height:18px}
+.note{margin-top:auto;font-size:13px;color:var(--mut);border-top:1px solid var(--line);padding-top:14px}
+.kbd{font-size:13px;color:var(--mut)}
+.pager,.sheet{display:none}
+@media (prefers-reduced-motion:no-preference){.scr.in .ph{animation:fade .25s ease-out}@keyframes fade{from{opacity:0;transform:translateY(6px)}}}
+@media(max-width:1100px){.main{grid-template-columns:minmax(0,1fr) 330px}.idx{display:none}.pick-d{display:flex!important}}
+@media(max-width:760px){
+ html,body{height:auto}
+ body{display:block;padding-bottom:76px}
+ .hdr{flex-wrap:wrap;gap:10px;padding:10px 16px}
+ .brand b{font-size:18px}.brand svg{width:32px;height:32px}
+ .seg{width:100%}.seg button{flex:1;justify-content:center;padding:8px 6px;font-size:14px}.seg button small{display:none}
+ .main{display:block}
+ .stage{padding:20px 16px}
+ .info{border:0;padding:20px 16px 8px}
+ .navs,.kbd,.pick-d{display:none!important}
+ .pager{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:6;gap:8px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+ .pager .nb{width:48px;flex:none}
+ .pick{flex:1;min-height:48px;border:1.5px solid var(--line);border-radius:12px;background:var(--soft);display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:14px;cursor:pointer;padding:0 10px}
+ .pick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+.sheet.open{display:flex;position:fixed;inset:0;z-index:9;background:rgba(14,15,18,.5);align-items:flex-end}
+.sheet .box{background:var(--bg);width:100%;max-height:78vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column}
+.sheet .top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
+.sheet .top button{border:0;background:var(--soft);border-radius:10px;min-height:40px;padding:0 14px;cursor:pointer;font-weight:600}
+.sheet .idx{display:block;border:0;overflow-y:auto;padding:8px 8px 24px}
+@media(min-width:761px){.sheet .box{max-width:420px;margin:0 auto;border-radius:20px;max-height:80vh;margin-bottom:auto;margin-top:8vh}.sheet.open{align-items:flex-start}}
+.pick-d{display:none;border:1.5px solid var(--line);background:var(--soft);border-radius:12px;min-height:44px;font-weight:600;cursor:pointer;align-items:center;justify-content:center;gap:6px}
+/* ---------- phone ---------- */
+.ph{width:300px;height:620px;border-radius:40px;background:#0e0f12;padding:10px;box-shadow:0 1px 0 #3a3d44 inset,0 14px 30px -18px rgba(0,0,0,.45)}
+.s{position:relative;height:100%;border-radius:31px;overflow:hidden;background:#fff;color:#1c1d21;font-size:13px;line-height:1.4;display:flex;flex-direction:column}
+.s.dk{background:#14171d;color:#f1f1f1}
+.sb{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 20px 0 24px;font-weight:600;font-size:12px}
+.sb i{width:72px;height:20px;background:#0e0f12;border-radius:12px;display:block}
+.sb em{font-style:normal;letter-spacing:1px}
+.bd{flex:1;overflow:hidden;padding:4px 14px 12px;display:flex;flex-direction:column;gap:10px}
+.ah{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;padding:2px 0 4px}
+.ah svg{width:20px;height:20px;flex:none}
+.ah .r{margin-left:auto;display:flex;gap:12px}
+.mu{color:#6b6e76}.dk .mu{color:#9da1a9}
+.sm{font-size:12px}
+.b{font-weight:700}
+.rw{display:flex;align-items:center;gap:8px}
+.sp{justify-content:space-between}
+.cd{border:1px solid #ece8e2;border-radius:14px;padding:10px 12px;background:#fff}
+.dk .cd{background:#1e2229;border-color:#2c313a}
+.btn{display:block;width:100%;text-align:center;border:0;border-radius:12px;padding:12px;font:700 14px Inter,sans-serif;background:var(--red);color:#fff;cursor:pointer}
+.btn.y{background:var(--tur);color:#1c1d21}.btn.o{background:transparent;border:1.5px solid currentColor;color:inherit}
+.btn.g{background:var(--veg)}
+.mt{margin-top:auto}
+.chip{display:inline-block;padding:4px 10px;border-radius:999px;background:#f4efe7;font-size:12px;font-weight:600;white-space:nowrap}
+.dk .chip{background:#2a2f38}
+.chip.on{background:var(--red);color:#fff}
+.days .chip{padding:6px 0;font-size:11px}
+.dk .chip.on{background:var(--tur);color:#1c1d21}
+.in1{border:1.5px solid #ddd6cc;border-radius:12px;padding:11px 12px;font-size:14px;background:#fff;color:#1c1d21}
+.dk .in1{background:#1e2229;border-color:#353b45;color:#f1f1f1}
+.lb{font-size:12px;font-weight:600;margin-bottom:4px;display:block}
+.vg{width:12px;height:12px;border:1.5px solid var(--veg);border-radius:3px;display:inline-grid;place-items:center;flex:none}
+.vg::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--veg)}
+.add{border:1.5px solid var(--red);color:var(--red);background:#fff;border-radius:9px;font:700 12px Inter;padding:5px 12px;cursor:pointer}
+.qty{display:inline-flex;align-items:center;background:var(--red);color:#fff;border-radius:9px;overflow:hidden;font-weight:700;font-size:12px}
+.qty button{background:none;border:0;color:#fff;font:700 14px Inter;width:26px;height:26px;cursor:pointer}
+.qty span{min-width:14px;text-align:center}
+.bn{flex:none;display:flex;justify-content:space-around;border-top:1px solid #eee;padding:8px 6px 14px;font-size:10px;font-weight:600;color:#7a7d84}
+.dk .bn{border-color:#272b33}
+.bn div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.bn svg{width:20px;height:20px}
+.bn .on{color:var(--red)}.dk .bn .on{color:var(--tur)}
+.tb{display:flex;background:#f4efe7;border-radius:12px;padding:3px}
+.tb span{flex:1;text-align:center;padding:7px;border-radius:9px;font-weight:600;font-size:12px;cursor:pointer}
+.tb span.on{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12);color:var(--red)}
+.dk .tb{background:#232830}.dk .tb span.on{background:#353b45;color:var(--tur)}
+.it{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed #ece6dd}
+.it:last-child{border:0}
+.it .pic{width:58px;height:58px;border-radius:12px;flex:none;overflow:hidden;background:#f8eed9}
+.it .pic svg{width:100%;height:100%}
+.it .tx{flex:1}
+.it .tx b{display:block;font-size:13px}
+.so{opacity:.5}
+.ln{display:flex;justify-content:space-between;padding:3px 0}
+.dk .ln.t{border-color:#2c313a}
+.ln.t{border-top:1px solid #eee;margin-top:4px;padding-top:7px;font-weight:700;font-size:14px}
+.map{position:relative;border-radius:14px;overflow:hidden;background:#e9efe4;flex:none}
+.dk .map{background:#1f2a24}
+.map>svg{display:block;width:100%;height:100%}
+.av{width:38px;height:38px;border-radius:50%;background:#f0d9a8;display:grid;place-items:center;font-weight:700;color:#7a4b00;flex:none}
+.tl{position:relative;padding-left:18px}
+.tl div{position:relative;padding:3px 0 7px;font-size:12px}
+.tl div::before{content:"";position:absolute;left:-15px;top:7px;width:9px;height:9px;border-radius:50%;background:#d7d2ca}
+.tl div::after{content:"";position:absolute;left:-11px;top:16px;width:1.5px;height:calc(100% - 10px);background:#e3ded6}
+.tl div:last-child::after{display:none}
+.tl .dn::before{background:var(--veg)}.tl .nw::before{background:var(--red);box-shadow:0 0 0 4px rgba(181,32,42,.18)}
+.otp{display:flex;gap:8px}
+.otp span{flex:1;height:44px;border:1.5px solid #ddd6cc;border-radius:11px;display:grid;place-items:center;font-size:18px;font-weight:700}
+.dk .otp span{border-color:#353b45}
+.otp span.f{border-color:var(--red)}.dk .otp span.f{border-color:var(--tur)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;font-size:11px}
+.cal b{font-size:10px;color:#8a8d94;font-weight:600}
+.cal span{padding:6px 0;border-radius:8px;background:#f6f2ec;cursor:pointer}
+.cal .d{background:#e3f2e6;color:#14632b}.cal .s1{background:#fde8c4;color:#7a4b00;text-decoration:line-through}.cal .u{background:var(--red);color:#fff}.cal .x{background:none;color:#c5c1ba;cursor:default}
+.bar{height:8px;border-radius:9px;background:#ece6dd;overflow:hidden}
+.dk .bar{background:#2a2f38}
+.bar i{display:block;height:100%;background:var(--tur);border-radius:9px}
+.tg{width:46px;height:26px;border-radius:99px;background:#3a3f49;position:relative;cursor:pointer;flex:none;transition:background .2s}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.tg.on{background:var(--veg)}.tg.on::after{left:23px}
+.big{font-family:"Baloo 2";font-size:28px;font-weight:800;line-height:1}
+.ov{position:absolute;inset:34px 0 0;background:rgba(14,15,18,.45);display:flex;align-items:flex-end}
+.sh{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:16px 14px 18px;display:flex;flex-direction:column;gap:10px}
+.dk .sh{background:#1b1f26}
+.ring{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;background:conic-gradient(var(--tur) var(--p),#2a2f38 0);position:relative}
+.ring::before{content:"";position:absolute;inset:6px;border-radius:50%;background:#1b1f26}
+.ring span{position:relative}
+.up{border:1.5px dashed #4a505b;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center}
+.up .ph2{width:66px;height:44px;border-radius:8px;background:linear-gradient(135deg,#3b6ea8,#25466f);flex:none;position:relative}
+.up .ph2::after{content:"";position:absolute;left:8px;top:9px;width:14px;height:18px;border-radius:3px;background:#d9c9a8}
+.ok{color:var(--veg);font-weight:700}
+.wr{background:#fff4dc;color:#7a4b00;border-radius:12px;padding:8px 10px;font-size:12px}
+.dk .wr{background:#3a2f12;color:#f4d27a}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.st{border-radius:12px;padding:9px 10px;background:#1e2229}
+.st b{display:block;font-size:17px}
+.st span{font-size:11px;color:#9da1a9}
+.cnt{width:44px;height:44px;border-radius:50%;border:3px solid var(--tur);display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+@media (prefers-reduced-motion:no-preference){.pulse{animation:pl 1.6s ease-in-out infinite}@keyframes pl{50%{transform:scale(1.25);opacity:.6}}}
+
+
+
+.ph{box-shadow:0 30px 60px -30px rgba(0,0,0,.55),0 1px 0 #3a3d44 inset}
+.rad{width:18px;height:18px;border-radius:50%;border:2px solid #c9c2b8;flex:none;position:relative}.sel .rad{border-color:var(--red)}.sel .rad::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--red)}
+</style>
+</head>
+<body data-app="c">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <radialGradient id="steel" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#f4f5f7"/><stop offset="1" stop-color="#aeb3bb"/></radialGradient>
+  <symbol id="bowl" viewBox="0 0 40 40"><circle cx="20" cy="21" r="16" fill="#c9cdd3"/><circle cx="20" cy="20" r="15" fill="url(#steel)"/><circle cx="20" cy="20" r="11.5" fill="currentColor"/><circle cx="16" cy="17" r="3" fill="#fff" opacity=".28"/></symbol>
+  <symbol id="rotla" viewBox="0 0 40 40"><circle cx="20" cy="21" r="16" fill="#8a5a2b"/><circle cx="20" cy="20" r="16" fill="#b9874f"/><g fill="#7b4e22" opacity=".55"><circle cx="13" cy="15" r="2"/><circle cx="25" cy="13" r="1.6"/><circle cx="27" cy="25" r="2.3"/><circle cx="15" cy="27" r="1.5"/><circle cx="21" cy="20" r="1.2"/></g></symbol>
+  <symbol id="glass" viewBox="0 0 40 40"><path d="M11 6h18l-2.5 29h-13z" fill="#e9eef2"/><path d="M12.3 13h15.4l-1.9 21h-11.6z" fill="#f7f3e6"/><path d="M14 15h3l-1 17h-1.5z" fill="#fff" opacity=".7"/><circle cx="20" cy="15" r="1.3" fill="#3f8f3f"/></symbol>
+  <symbol id="thali" viewBox="0 0 120 120">
+   <circle cx="60" cy="62" r="56" fill="#9aa0a8"/><circle cx="60" cy="60" r="56" fill="url(#steel)"/><circle cx="60" cy="60" r="47" fill="none" stroke="#c7ccd3" stroke-width="2"/>
+   <g><use href="#bowl" x="20" y="18" width="30" height="30" color="#2f7d32"/><use href="#bowl" x="46" y="12" width="30" height="30" color="#c0392b"/><use href="#bowl" x="72" y="20" width="30" height="30" color="#e8b923"/><use href="#bowl" x="78" y="50" width="26" height="26" color="#f2e2a0"/></g>
+   <use href="#rotla" x="22" y="56" width="34" height="34"/><use href="#rotla" x="28" y="62" width="30" height="30"/>
+   <ellipse cx="66" cy="84" rx="14" ry="10" fill="#fbf7ee"/><ellipse cx="62" cy="81" rx="5" ry="3" fill="#fff"/>
+   <circle cx="58" cy="54" r="7" fill="#d98a1f"/><circle cx="56" cy="52" r="2" fill="#f6c46e"/>
+  </symbol>
+  <symbol id="sweet" viewBox="0 0 40 40"><rect x="7" y="13" width="26" height="18" rx="3" fill="#a8641f"/><rect x="7" y="11" width="26" height="16" rx="3" fill="#d4913d"/><g fill="#f2d39a"><circle cx="13" cy="17" r="1.2"/><circle cx="21" cy="20" r="1.2"/><circle cx="27" cy="15" r="1.2"/></g></symbol>
+  <symbol id="farsan" viewBox="0 0 40 40"><use href="#bowl" width="40" height="40" color="#e9c46a"/><g stroke="#c98a2b" stroke-width="2" stroke-linecap="round"><path d="M13 18l7 4M18 14l3 9M24 16l-6 7M15 24l9-2"/></g></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h3l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8z" fill="currentColor"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 12.5h2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M12 9v11M12 9c-2-4-6-4-6-1.5S10 9 12 9c2 0 6 0 6-1.5S14 5 12 9" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-scooter" viewBox="0 0 48 48"><circle cx="12" cy="34" r="6" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="37" cy="34" r="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M12 34h14l6-14h5M30 20l-3-6h-4M37 34l-4-14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect x="14" y="20" width="11" height="9" rx="2" fill="currentColor"/></symbol>
+  <symbol id="m-city" viewBox="0 0 280 200" preserveAspectRatio="xMidYMid slice">
+   <rect width="280" height="200" fill="#e7eee2"/>
+   <g fill="#d6e3cf"><rect x="10" y="10" width="70" height="50" rx="6"/><rect x="100" y="12" width="60" height="40" rx="6"/><rect x="185" y="8" width="85" height="55" rx="6"/><rect x="12" y="84" width="58" height="46" rx="6"/><rect x="190" y="88" width="76" height="40" rx="6"/><rect x="20" y="150" width="90" height="42" rx="6"/><rect x="140" y="148" width="60" height="44" rx="6"/></g>
+   <rect x="105" y="78" width="60" height="50" rx="8" fill="#cfe3f0"/>
+   <g stroke="#fff" stroke-width="9" fill="none"><path d="M0 72h280M0 140h280M90 0v200M178 0v200M40 72v68"/></g>
+   <g stroke="#f6e7b7" stroke-width="5" fill="none"><path d="M0 72h280M178 0v200"/></g>
+  </symbol>
+ </defs>
+</svg>
+<header class="hdr">
+ <div class="brand"><svg><use href="#thali"/></svg><div><b>Food Delivery App</b><span>Sample demo · Yudiz Solutions</span></div></div>
+ <div class="seg" role="tablist" aria-label="Choose app">
+  <button role="tab" data-app="c" aria-selected="true">Customer App <small>27</small></button>
+  <button role="tab" data-app="d" aria-selected="false">Delivery Partner App <small>17</small></button>
+ </div>
+</header>
+<div class="main">
+ <nav class="idx" id="idx" aria-label="Screens"></nav>
+ <section class="stage" id="stage" aria-live="polite"><div class="fit" id="fit">
+<div class="scr" data-app="c" data-n="1" data-g="Getting started" data-t="Splash screen" data-d="Brand logo for 2-3 seconds, then the walkthrough (first launch) or Home (already logged in)." hidden><div class="ph"><div class="s" style="background:var(--red);color:#fff"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="align-items:center;justify-content:center;text-align:center">
+<svg height="150" width="150"><use href="#thali"></use></svg>
+<div style="font-family:'Baloo 2';font-size:30px;font-weight:800;line-height:1">Kathiawadi Kitchen</div>
+<div style="opacity:.85">Kathiawadi food, delivered from our own kitchen</div>
+</div></div></div></div>
+<div class="scr" data-app="c" data-n="2" data-g="Getting started" data-t="Walkthrough" data-d="Three slides: authentic Kathiawadi food, thali subscriptions, and live-tracked delivery. Skip anytime." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="rw sp"><span></span><span class="mu b">Skip</span></div>
+<div style="background:#fdf0d2;border-radius:20px;height:250px;display:grid;place-items:center"><svg height="190" width="190"><use href="#thali"></use></svg></div>
+<h3 style="font-size:24px">Daily thali, on subscription</h3>
+<div class="mu">Buy 15, 20 or 50 lunch or dinner thalis at a lower price. Skip any day you're on leave and the thali stays in your balance.</div>
+<div class="rw" style="gap:6px;justify-content:center"><i style="width:8px;height:8px;border-radius:9px;background:#ddd"></i><i style="width:22px;height:8px;border-radius:9px;background:var(--red)"></i><i style="width:8px;height:8px;border-radius:9px;background:#ddd"></i></div>
+<button class="btn mt">Next</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="3" data-g="Getting started" data-t="Login with mobile number" data-d="Indian mobile number with format validation. One flow for new and existing customers." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><h3 style="font-size:26px;margin-top:20px">Login or sign up</h3><div class="mu">We'll send a 6-digit OTP to verify your number.</div>
+<div><span class="lb">Mobile number</span><div class="in1 rw"><b>+91</b><span style="color:#ccc">|</span>98250 12345</div></div>
+<button class="btn">Send OTP</button>
+<div class="mu sm" style="text-align:center">By continuing you agree to the Terms &amp; Conditions and Privacy Policy.</div>
+<div class="mt" style="display:grid;place-items:center;opacity:.9"><svg height="170" width="170"><use href="#thali"></use></svg></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="4" data-g="Getting started" data-t="OTP verification" data-d="Auto-read on Android, auto-fill on iOS, 30-second resend timer and OTP expiry." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg></div><h3 style="font-size:26px">Enter OTP</h3><div class="mu">Sent to +91 98250 12345 · <b style="color:var(--red)">Edit</b></div>
+<div class="otp"><span class="f">4</span><span class="f">8</span><span class="f">2</span><span class="f">7</span><span></span><span></span></div>
+<div class="rw sp sm"><span class="mu">OTP auto-read from SMS</span><span class="b">Resend in 0:24</span></div>
+<div class="wr">OTP is valid for 5 minutes.</div>
+<button class="btn mt">Verify &amp; continue</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="5" data-g="Getting started" data-t="New customer profile" data-d="Name, optional email for invoices, friend&#x27;s referral code and T&amp;C acceptance." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><h3 style="font-size:24px;margin-top:8px">Tell us about you</h3>
+<div><span class="lb">Full name *</span><div class="in1">Priya Shah</div></div>
+<div><span class="lb">Email (for invoices)</span><div class="in1">priya.shah@example.com</div></div>
+<div><span class="lb">Referral code (optional)</span><div class="in1 rw sp"><span>KK-RAJ204</span><span class="ok sm">Applied</span></div></div>
+<div class="rw sm"><span style="width:18px;height:18px;border-radius:5px;background:var(--red);display:grid;place-items:center;color:#fff;font-size:12px;flex:none">✓</span>I accept the Terms &amp; Conditions and Privacy Policy</div>
+<button class="btn mt">Continue</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="6" data-g="Getting started" data-t="Location &amp; serviceability check" data-d="Device location or manual search/pin code, map-pin adjustment, then a check against the admin&#x27;s serviceable pin codes." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="padding:0;gap:0"><div class="map" style="height:300px;border-radius:0"><svg preserveaspectratio="xMidYMid slice" viewbox="0 0 280 200"><use href="#m-city"></use><g transform="translate(140 96)"><circle class="pulse" fill="rgba(181,32,42,.15)" r="18"></circle><use color="#b5202a" height="28" href="#i-pin" width="28" x="-14" y="-30"></use></g></svg>
+<div class="in1 rw" style="position:absolute;top:10px;left:12px;right:12px"><svg height="18" width="18"><use href="#i-search"></use></svg><span class="mu">Search area, street or pin code</span></div></div>
+<div style="padding:14px;display:flex;flex-direction:column;gap:10px;flex:1">
+<div class="rw" style="color:var(--red)"><svg height="18" width="18"><use href="#i-pin"></use></svg><b>Use current location</b></div>
+<div class="cd"><b>Shivalik Residency, Satellite</b><div class="mu sm">B-204, Satellite Road, Ahmedabad 380015</div><div class="ok sm" style="margin-top:4px">We deliver here</div></div>
+<div class="mu sm">Drag the pin to the exact delivery point.</div>
+<button class="btn mt">Confirm location</button></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="7" data-g="Getting started" data-t="Not serviceable state" data-d="Shown when the address falls outside the active pin codes, with a quick way to change the location." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="text-align:center;justify-content:center;align-items:center">
+<div style="width:150px;height:150px;border-radius:50%;background:#fdf0d2;display:grid;place-items:center"><svg height="70" style="color:var(--red)" width="70"><use href="#i-pin"></use></svg></div>
+<h3 style="font-size:24px">We don't deliver here yet</h3>
+<div class="mu">Pin code 382421 is outside our delivery area. Try another address nearby.</div>
+<button class="btn" style="margin-top:12px">Change location</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="8" data-g="Browse &amp; order" data-t="Home screen" data-d="Delivery location, kitchen open/closed status, admin banners, today&#x27;s lunch and dinner thali menu, categories, and a floating cart bar." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="rw sp"><div><div class="mu sm">Deliver to</div><div class="b rw" style="gap:4px"><svg height="15" style="color:var(--red)" width="15"><use href="#i-pin"></use></svg>Home · Satellite 380015 ▾</div></div><div class="rw" style="gap:12px"><svg height="20" width="20"><use href="#i-bell"></use></svg><svg height="20" width="20"><use href="#i-user"></use></svg></div></div>
+<div class="in1 rw" style="padding:9px 12px"><svg height="16" width="16"><use href="#i-search"></use></svg><span class="mu">Search "Sev Tameta"</span></div>
+<div class="rw sp sm" style="background:#e9f6ec;border-radius:10px;padding:6px 10px"><span class="ok">● Open now</span><span class="mu">Lunch till 3:30 PM</span></div>
+<div style="background:var(--red);color:#fff;border-radius:14px;padding:12px;display:flex;gap:8px;align-items:center"><div style="flex:1"><b style="font-size:15px">Subscribe &amp; save 10%</b><div class="sm" style="opacity:.9">Daily lunch thali from ₹102</div></div><svg height="64" width="64"><use href="#thali"></use></svg></div>
+<div class="rw sp"><b style="font-size:15px">Today's thali</b><div class="tb" style="width:130px"><span class="on">Lunch</span><span>Dinner</span></div></div>
+<div class="cd rw" style="gap:10px"><svg height="62" style="flex:none" width="62"><use href="#thali"></use></svg><div style="flex:1"><div class="rw"><span class="vg"></span><b>Deluxe Lunch Thali</b></div><div class="mu sm">Sev Tameta, Ringan no Olo, Kadhi, Khichdi, Bajra Rotla, Chaas</div><div class="rw sp" style="margin-top:4px"><b>₹180</b><button class="add">ADD</button></div></div></div>
+<div class="rw" style="gap:6px;overflow:hidden"><span class="chip on">Thalis</span><span class="chip">Sabzi</span><span class="chip">Rotla</span><span class="chip">Farsan</span><span class="chip">Sweets</span></div>
+</div>
+<div style="margin:0 12px 8px;background:var(--veg);color:#fff;border-radius:12px;padding:9px 12px;display:flex;justify-content:space-between;font-weight:700"><span>2 items · ₹230</span><span>View cart ›</span></div>
+<div class="bn"><div class="on"><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-menu"></use></svg>Menu</div><div><svg><use href="#i-cal"></use></svg>Subscription</div><div><svg><use href="#i-bag"></use></svg>Orders</div></div></div></div></div>
+<div class="scr" data-app="c" data-n="9" data-g="Browse &amp; order" data-t="Menu: thalis &amp; a la carte" data-d="Category jump, quantity stepper, bestseller tags, sold-out items, and items shown only in their meal slot." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">Menu<span class="r"><svg><use href="#i-search"></use></svg></span></div>
+<div class="tb"><span>Thalis</span><span class="on">A la carte</span></div>
+<div class="rw" style="gap:6px;overflow:hidden"><span class="chip on">Kathiawadi Sabzi</span><span class="chip">Rotla &amp; Bhakhri</span><span class="chip">Farsan</span></div>
+<div>
+<div class="it"><div class="pic"><svg><use color="#c0392b" href="#bowl"></use></svg></div><div class="tx"><div class="rw"><span class="vg"></span><b>Sev Tameta</b></div><span class="mu sm">Bestseller · tangy tomato with sev</span><div class="rw sp"><b>₹140</b><span class="qty"><button>−</button><span>1</span><button>+</button></span></div></div></div>
+<div class="it"><div class="pic"><svg><use color="#6b3f6e" href="#bowl"></use></svg></div><div class="tx"><div class="rw"><span class="vg"></span><b>Ringan no Olo</b></div><span class="mu sm">Smoky roasted brinjal</span><div class="rw sp"><b>₹150</b><button class="add">ADD</button></div></div></div>
+<div class="it"><div class="pic"><svg><use color="#d9a21b" href="#bowl"></use></svg></div><div class="tx"><div class="rw"><span class="vg"></span><b>Lasaniya Bataka</b></div><span class="mu sm">Garlic potato, Kathiawadi style</span><div class="rw sp"><b>₹130</b><button class="add">ADD</button></div></div></div>
+<div class="it so"><div class="pic"><svg><use color="#4f7d2a" href="#bowl"></use></svg></div><div class="tx"><div class="rw"><span class="vg"></span><b>Bharela Bhinda</b></div><span class="mu sm">Stuffed okra</span><div class="rw sp"><b>₹150</b><span class="chip">Sold out</span></div></div></div>
+<div class="it"><div class="pic"><svg><use href="#rotla"></use></svg></div><div class="tx"><div class="rw"><span class="vg"></span><b>Bajra Rotla (2)</b></div><span class="mu sm">Available at 7:00 PM</span><div class="rw sp"><b>₹50</b><span class="chip">Dinner</span></div></div></div>
+</div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div class="on"><svg><use href="#i-menu"></use></svg>Menu</div><div><svg><use href="#i-cal"></use></svg>Subscription</div><div><svg><use href="#i-bag"></use></svg>Orders</div></div></div></div></div>
+<div class="scr" data-app="c" data-n="10" data-g="Browse &amp; order" data-t="Item details" data-d="Image gallery, rating, today&#x27;s thali contents set by the kitchen, fixed thali structure and a &quot;Subscribe &amp; save&quot; shortcut." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div style="background:#fdf0d2;height:210px;display:grid;place-items:center;position:relative;flex:none"><svg height="190" width="190"><use href="#thali"></use></svg><div style="position:absolute;top:8px;left:12px;background:#fff;border-radius:50%;width:32px;height:32px;display:grid;place-items:center"><svg height="18" width="18"><use href="#i-back"></use></svg></div><div class="rw" style="position:absolute;bottom:8px;gap:5px"><i style="width:16px;height:6px;border-radius:9px;background:var(--red)"></i><i style="width:6px;height:6px;border-radius:9px;background:#d8c9a6"></i><i style="width:6px;height:6px;border-radius:9px;background:#d8c9a6"></i></div></div>
+<div class="bd" style="padding-top:12px"><div class="rw"><span class="vg"></span><h3 style="font-size:22px">Deluxe Lunch Thali</h3></div>
+<div class="rw sm"><span class="chip" style="background:#e9f6ec;color:#14632b">★ 4.6 (312)</span><span class="mu">Serves 1</span></div>
+<div class="cd"><b class="sm">Today's thali · Mon 23 Nov</b>
+<div class="sm" style="margin-top:4px;line-height:1.6">Sev Tameta · Ringan no Olo · Kadhi · Khichdi · 2 Bajra Rotla · 2 Rotli · Papad · Salad · Gol · Chaas</div></div>
+<div class="rw sm mu">Fixed: 2 sabzi, kadhi, khichdi, rotla/rotli, chaas</div>
+<div class="wr rw sp"><span>Subscribe &amp; save: ₹162/thali</span><b>View ›</b></div>
+<div class="rw mt" style="gap:10px"><span class="qty" style="padding:4px"><button>−</button><span>1</span><button>+</button></span><button class="btn" style="flex:1">Add · ₹180</button></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="11" data-g="Browse &amp; order" data-t="Search" data-d="Search by dish name with recent searches and a friendly empty state when nothing matches." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="rw"><svg height="20" width="20"><use href="#i-back"></use></svg><div class="in1 rw" style="flex:1;padding:9px 12px;border-color:var(--red)"><span>rotla</span><span class="mu" style="margin-left:auto">✕</span></div></div>
+<div class="mu sm">Recent: <span class="chip">kadhi</span> <span class="chip">chaas</span> <span class="chip">thali</span></div>
+<b>3 results for "rotla"</b>
+<div>
+<div class="it"><div class="pic"><svg><use href="#rotla"></use></svg></div><div class="tx"><b>Bajra Rotla (2)</b><span class="mu sm">With white butter</span><div class="rw sp"><b>₹50</b><button class="add">ADD</button></div></div></div>
+<div class="it"><div class="pic"><svg><use href="#rotla"></use></svg></div><div class="tx"><b>Jowar Rotla (2)</b><span class="mu sm">Soft, hand-patted</span><div class="rw sp"><b>₹50</b><button class="add">ADD</button></div></div></div>
+<div class="it"><div class="pic"><svg><use href="#thali"></use></svg></div><div class="tx"><b>Rotla Dinner Thali</b><span class="mu sm">Rotla, Lasaniya Bataka, Khichdi, Kadhi</span><div class="rw sp"><b>₹170</b><button class="add">ADD</button></div></div></div>
+</div></div></div></div></div>
+<div class="scr" data-app="c" data-n="12" data-g="Browse &amp; order" data-t="Cart" data-d="Quantities, cooking instructions and the full bill: delivery fee by pin code, packaging, GST, referral credits. Checks minimum order, kitchen status and sold-out items." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Cart</div>
+<div class="cd">
+<div class="ln"><span class="rw"><span class="vg"></span>Deluxe Lunch Thali</span><span class="rw"><span class="qty"><button>−</button><span>1</span><button>+</button></span><b style="width:42px;text-align:right">₹180</b></span></div>
+<div class="ln"><span class="rw"><span class="vg"></span>Bajra Rotla (2)</span><span class="rw"><span class="qty"><button>−</button><span>1</span><button>+</button></span><b style="width:42px;text-align:right">₹50</b></span></div>
+<div class="ln"><span class="rw"><span class="vg"></span>Chaas</span><span class="rw"><span class="qty"><button>−</button><span>1</span><button>+</button></span><b style="width:42px;text-align:right">₹30</b></span></div>
+</div>
+<div class="in1 sm mu">Cooking note: "Less spicy please"</div>
+<div class="cd sm"><b>Bill details</b>
+<div class="ln"><span>Item total</span><span>₹260.00</span></div>
+<div class="ln"><span>Delivery fee (380015)</span><span>₹25.00</span></div>
+<div class="ln"><span>Packaging</span><span>₹10.00</span></div>
+<div class="ln"><span>GST (5%)</span><span>₹13.00</span></div>
+<div class="ln ok"><span>Referral credits</span><span>−₹50.00</span></div>
+<div class="ln t"><span>Grand total</span><span>₹258.00</span></div></div>
+<div class="mu sm">Minimum order ₹99 · kitchen open</div>
+<button class="btn mt">Proceed to checkout</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="13" data-g="Browse &amp; order" data-t="Checkout &amp; payment" data-d="Address with delivery instructions, Razorpay online payment or COD (when enabled and under the COD limit). Failed payments can be retried." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Checkout</div>
+<div class="cd"><div class="rw sp"><b class="rw" style="gap:5px"><svg height="15" style="color:var(--red)" width="15"><use href="#i-pin"></use></svg>Home</b><span class="b sm" style="color:var(--red)">Change</span></div><div class="mu sm">B-204, Shivalik Residency, Satellite, Ahmedabad 380015</div><div class="sm" style="margin-top:4px">Instructions: Call on arrival</div></div>
+<b>Payment method</b>
+<div class="pay" data-g="pay">
+<div class="cd rw sel" style="border-color:var(--red);cursor:pointer"><span class="rad"></span><div><b>UPI / Cards / Net banking</b><div class="mu sm">Secure payment via Razorpay</div></div></div>
+<div class="cd rw" style="margin-top:8px;cursor:pointer"><span class="rad"></span><div><b>Cash on delivery</b><div class="mu sm">Available on orders up to ₹1,500</div></div></div>
+</div>
+<div class="cd rw sp"><span>Order summary · 3 items</span><b>₹258.00</b></div>
+<button class="btn mt">Pay ₹258 &amp; place order</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="14" data-g="Browse &amp; order" data-t="Order confirmation" data-d="Order ID, estimated delivery time and a direct &quot;Track order&quot; button." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="text-align:center;align-items:center;justify-content:center">
+<div style="width:120px;height:120px;border-radius:50%;background:#e9f6ec;display:grid;place-items:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--veg);color:#fff;display:grid;place-items:center;font-size:40px;font-weight:800">✓</div></div>
+<h3 style="font-size:26px">Order placed!</h3>
+<div class="mu">Order #KK-20481 · Paid online</div>
+<div class="cd" style="width:100%"><div class="mu sm">Estimated delivery</div><div class="big" style="color:var(--red)">12:45 PM</div><div class="sm mu">about 35 minutes</div></div>
+<div class="mu sm">GST invoice will be emailed after delivery.</div>
+<button class="btn" style="margin-top:10px">Track order</button><span class="b" style="color:var(--red)">Back to home</span></div></div></div></div>
+<div class="scr" data-app="c" data-n="15" data-g="Tracking &amp; orders" data-t="Live order tracking" data-d="Rider&#x27;s live location on the map with ETA, status timeline, rider details with call button, and the 4-digit delivery OTP." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="map" style="height:230px;border-radius:0"><svg preserveaspectratio="xMidYMid slice" viewbox="0 0 280 200"><use href="#m-city"></use><path d="M60 140 V72 H178 V40" fill="none" stroke="#b5202a" stroke-dasharray="1 0" stroke-width="4"></path><path d="M60 140 V72 H120" fill="none" opacity=".35" stroke="#b5202a" stroke-width="4"></path><circle cx="60" cy="140" fill="#1b1f27" r="9"></circle><text fill="#fff" font-size="10" font-weight="700" text-anchor="middle" x="60" y="144">K</text><g transform="translate(178 40)"><use color="#b5202a" height="26" href="#i-pin" width="26" x="-13" y="-26"></use></g><g transform="translate(120 72)"><circle class="pulse" fill="rgba(244,180,0,.3)" r="16"></circle><circle fill="#f4b400" r="11"></circle><use color="#1b1f27" height="16" href="#i-scooter" width="16" x="-8" y="-8"></use></g></svg>
+<div style="position:absolute;top:10px;left:12px;background:#fff;border-radius:50%;width:32px;height:32px;display:grid;place-items:center"><svg height="18" width="18"><use href="#i-back"></use></svg></div></div>
+<div class="bd" style="padding-top:12px"><div class="rw sp"><div><b style="font-size:16px">Out for delivery</b><div class="mu sm">Arriving in 8 min · 12:43 PM</div></div><div style="text-align:center;background:#fdf0d2;border-radius:10px;padding:4px 10px"><div class="sm mu">Delivery OTP</div><b style="font-size:18px;letter-spacing:2px;white-space:nowrap">5291</b></div></div>
+<div class="cd rw"><div class="av">MR</div><div style="flex:1"><b>Mahesh Rathod</b><div class="mu sm">GJ01 AB 4521 · ★ 4.8</div></div><div style="width:36px;height:36px;border-radius:50%;background:var(--veg);color:#fff;display:grid;place-items:center"><svg height="18" width="18"><use href="#i-phone"></use></svg></div></div>
+<div class="tl"><div class="dn">Order placed · 12:08</div><div class="dn">Accepted by kitchen · 12:09</div><div class="dn">Preparing · Ready for pickup · 12:27</div><div class="dn">Picked up · 12:31</div><div class="nw"><b>Out for delivery</b></div><div>Delivered</div></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="16" data-g="Tracking &amp; orders" data-t="My orders" data-d="Active, past and cancelled orders with Regular/Subscription tags. Cancel is allowed until the kitchen accepts, with automatic refund for online payments." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">My orders</div>
+<div class="tb"><span class="on">Active</span><span>Past</span><span>Cancelled</span></div>
+<div class="cd"><div class="rw sp"><b>#KK-20481</b><span class="chip" style="background:#fdf0d2">Regular</span></div><div class="mu sm">Deluxe Lunch Thali, Bajra Rotla, Chaas</div><div class="rw sp" style="margin-top:6px"><span class="b" style="color:var(--red)">Out for delivery</span><b>₹258</b></div><button class="btn" style="margin-top:8px;padding:8px">Track order</button></div>
+<div class="cd"><div class="rw sp"><b>#KK-20476</b><span class="chip" style="background:#e9f6ec;color:#14632b">Subscription</span></div><div class="mu sm">Mini Lunch Thali · Day 7 of 20</div><div class="rw sp" style="margin-top:6px"><span class="b">Preparing</span><span class="mu sm">Prepaid</span></div></div>
+<div class="cd"><div class="rw sp"><b>#KK-20412</b><span class="chip" style="background:#fdf0d2">Regular</span></div><div class="mu sm">Rotla Dinner Thali × 2</div><div class="rw sp" style="margin-top:6px"><span class="b mu">Placed · awaiting kitchen</span><b>₹384</b></div><div class="rw sm" style="margin-top:6px;color:var(--red)"><b>Cancel order</b><span class="mu">(allowed until the kitchen accepts)</span></div></div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-menu"></use></svg>Menu</div><div><svg><use href="#i-cal"></use></svg>Subscription</div><div class="on"><svg><use href="#i-bag"></use></svg>Orders</div></div></div></div></div>
+<div class="scr" data-app="c" data-n="17" data-g="Tracking &amp; orders" data-t="Order details" data-d="Full bill, rider details, GST invoice PDF, reorder, and &quot;Report an issue&quot; with reason, comment and photo for the admin to resolve." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Order #KK-20398</div>
+<div class="rw sp"><span class="ok">● Delivered · 21 Nov, 1:02 PM</span></div>
+<div class="cd sm"><div class="ln"><span>Deluxe Lunch Thali × 1</span><span>₹180</span></div><div class="ln"><span>Chaas × 2</span><span>₹60</span></div><div class="ln"><span>Delivery, packaging &amp; GST</span><span>₹47</span></div><div class="ln t"><span>Paid via UPI</span><span>₹287</span></div></div>
+<div class="cd rw"><div class="av">JP</div><div><b>Jignesh Parmar</b><div class="mu sm">Delivered in 31 min</div></div></div>
+<div class="grid2"><button class="btn o" style="color:var(--red)">Download invoice</button><button class="btn">Reorder</button></div>
+<div class="cd"><b>Report an issue</b><div class="rw" style="gap:6px;flex-wrap:wrap;margin-top:6px"><span class="chip on">Missing item</span><span class="chip">Quality</span><span class="chip">Spilled</span><span class="chip">Other</span></div><div class="in1 sm mu" style="margin-top:8px">Chaas was missing from my order…</div><div class="rw sm" style="margin-top:6px;justify-content:space-between"><span class="mu">+ Add photo</span><b style="color:var(--red)">Submit</b></div></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="18" data-g="Tracking &amp; orders" data-t="Ratings &amp; reviews" data-d="Separate star ratings for the food and the delivery partner, a written review and quick tags." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Rate your order</div>
+<div class="cd" style="text-align:center"><svg height="70" width="70"><use href="#thali"></use></svg><b style="display:block">How was the food?</b><div class="stars rw" data-n="5" style="justify-content:center;gap:6px;margin:8px 0;color:var(--tur)"></div><div class="in1 sm mu" style="text-align:left">Ringan no olo tasted just like home!</div></div>
+<div class="cd" style="text-align:center"><b>Rate Jignesh's delivery</b><div class="stars rw" data-n="4" style="justify-content:center;gap:6px;margin:8px 0;color:var(--tur)"></div><div class="rw" style="gap:6px;justify-content:center;flex-wrap:wrap"><span class="chip on">On time</span><span class="chip on">Polite</span><span class="chip">Food was hot</span></div></div>
+<button class="btn mt">Submit rating</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="19" data-g="Thali subscription" data-t="Subscription packages" data-d="Separate lunch and dinner packages defined by the admin: thali type, number of thalis, per-thali price vs regular, savings and validity." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">Thali subscription</div>
+<div class="tb"><span class="on">Lunch</span><span>Dinner</span></div>
+<div class="cd" style="border-color:var(--red)"><div class="rw sp"><b>Mini Lunch Thali · 20</b><span class="chip on">Popular</span></div><div class="mu sm">1 sabzi, dal, rice, 4 rotli, chaas</div><div class="rw sp" style="margin-top:6px"><span><b style="font-size:16px">₹108</b><span class="mu sm"> /thali <s>₹120</s></span></span><b>₹2,160</b></div><div class="rw sp sm"><span class="ok">Save ₹240</span><span class="mu">Valid 30 days</span></div></div>
+<div class="cd"><div class="rw sp"><b>Deluxe Lunch Thali · 20</b></div><div class="mu sm">2 sabzi, kadhi, khichdi, rotla, chaas</div><div class="rw sp" style="margin-top:6px"><span><b style="font-size:16px">₹162</b><span class="mu sm"> /thali <s>₹180</s></span></span><b>₹3,240</b></div><div class="rw sp sm"><span class="ok">Save ₹360</span><span class="mu">Valid 30 days</span></div></div>
+<div class="cd"><div class="rw sp"><b>Mini Lunch Thali · 50</b><span class="chip">Best value</span></div><div class="rw sp" style="margin-top:6px"><span><b style="font-size:16px">₹102</b><span class="mu sm"> /thali <s>₹120</s></span></span><b>₹5,100</b></div><div class="rw sp sm"><span class="ok">Save ₹900</span><span class="mu">Valid 75 days</span></div></div>
+<button class="btn mt">Subscribe to Mini Lunch · 20</button></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-menu"></use></svg>Menu</div><div class="on"><svg><use href="#i-cal"></use></svg>Subscription</div><div><svg><use href="#i-bag"></use></svg>Orders</div></div></div></div></div>
+<div class="scr" data-app="c" data-n="20" data-g="Thali subscription" data-t="Choose days, start date &amp; address" data-d="Pick delivery weekdays, start date (based on the admin cut-off time) and a serviceable address." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Set your schedule</div>
+<div class="mu sm">Step 2 of 4 · Mini Lunch Thali · 20</div>
+<div class="bar"><i style="width:50%;background:var(--red)"></i></div>
+<b>Deliver on these days</b>
+<div class="days" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center">
+<span class="chip on">Mon</span><span class="chip on">Tue</span><span class="chip on">Wed</span><span class="chip on">Thu</span><span class="chip on">Fri</span><span class="chip">Sat</span><span class="chip">Sun</span></div>
+<div class="mu sm">Minimum 3 days a week. Tap to change.</div>
+<b>Start date</b>
+<div class="in1 rw sp"><span>Tue, 24 Nov 2026</span><svg height="18" width="18"><use href="#i-cal"></use></svg></div>
+<div class="mu sm">Today's lunch cut-off (10:00 AM) has passed, so the earliest start is tomorrow.</div>
+<b>Delivery address</b>
+<div class="cd sm"><b>Office</b> · 7th floor, Titanium Heights, Prahlad Nagar 380015 <span class="ok">✓ Serviceable</span></div>
+<button class="btn mt">Review subscription</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="21" data-g="Thali subscription" data-t="Review &amp; pay" data-d="Summary with the date the thalis will be used up and the validity end date. Full online payment; COD isn&#x27;t offered for subscriptions." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Review &amp; pay</div>
+<div class="cd rw"><svg height="56" width="56"><use href="#thali"></use></svg><div><b>Mini Lunch Thali · 20</b><div class="mu sm">₹108 per thali · Lunch</div></div></div>
+<div class="cd sm"><div class="ln"><span class="mu">Delivery days</span><b>Mon – Fri</b></div><div class="ln"><span class="mu">Starts</span><b>Tue, 24 Nov</b></div><div class="ln"><span class="mu">20 thalis used by</span><b>Mon, 21 Dec</b></div><div class="ln"><span class="mu">Valid till</span><b>Wed, 23 Dec</b></div><div class="ln"><span class="mu">Address</span><b>Office, Prahlad Nagar</b></div></div>
+<div class="cd sm"><div class="ln"><span>Package price</span><span>₹2,160.00</span></div><div class="ln"><span>GST (5%)</span><span>₹108.00</span></div><div class="ln t"><span>Total</span><span>₹2,268.00</span></div></div>
+<div class="wr">Subscriptions are paid online. Skipped thalis stay in your balance until the validity date.</div>
+<button class="btn mt">Pay ₹2,268 via Razorpay</button></div></div></div></div>
+<div class="scr" data-app="c" data-n="22" data-g="Thali subscription" data-t="My subscription dashboard" data-d="Thali balance (remaining, delivered, skipped), validity, delivery calendar and today&#x27;s menu. Try tapping a scheduled day to skip it." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">My subscription</div>
+<div style="background:var(--red);color:#fff;border-radius:16px;padding:12px"><div class="rw sp"><b>Mini Lunch Thali · 20</b><span class="sm" style="opacity:.85">Mon–Fri</span></div><div class="rw sp" style="margin-top:8px;text-align:center"><div><div class="big" id="bal">12</div><div class="sm" style="opacity:.85">Remaining</div></div><div><div class="big">7</div><div class="sm" style="opacity:.85">Delivered</div></div><div><div class="big" id="skp">1</div><div class="sm" style="opacity:.85">Skipped</div></div></div><div class="sm" style="margin-top:6px;opacity:.9">Valid till 23 Dec · 19 days left · Today: Fri 4 Dec</div></div>
+<div class="rw sp"><b>December 2026</b><span class="mu sm">Tap a day to skip</span></div>
+<div class="cal" id="cal"></div>
+<div class="rw sm" style="gap:10px;flex-wrap:wrap"><span class="rw" style="gap:4px"><i style="width:10px;height:10px;border-radius:3px;background:#e3f2e6"></i>Delivered</span><span class="rw" style="gap:4px"><i style="width:10px;height:10px;border-radius:3px;background:#f6f2ec"></i>Scheduled</span><span class="rw" style="gap:4px"><i style="width:10px;height:10px;border-radius:3px;background:#fde8c4"></i>Skipped</span></div>
+<div class="cd sm"><b>Today's thali:</b> Dudhi chana, dal, rice, 4 rotli, chaas</div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-menu"></use></svg>Menu</div><div class="on"><svg><use href="#i-cal"></use></svg>Subscription</div><div><svg><use href="#i-bag"></use></svg>Orders</div></div></div></div></div>
+<div class="scr" data-app="c" data-n="23" data-g="Thali subscription" data-t="Skip a meal &amp; change address" data-d="Skip or undo before the cut-off, change the address for one day or all days (must be serviceable), change weekdays, with a balance-vs-validity warning." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="opacity:.35"><div class="ah">My subscription</div><div style="background:var(--red);height:120px;border-radius:16px"></div><div class="cal" style="pointer-events:none"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div></div>
+<div class="ov"><div class="sh"><b style="font-size:17px">Mon, 7 Dec · Lunch</b>
+<div class="cd rw sp"><div><b>Skip this meal</b><div class="mu sm">Thali stays in your balance</div></div><div class="tg on" style="background:var(--red)"></div></div>
+<div class="cd"><div class="rw sp"><b>Change address</b><span class="mu sm">For this day ▾</span></div><div class="mu sm" style="margin-top:4px">Home · Satellite 380015 <span class="ok">✓ Serviceable</span></div></div>
+<div class="cd"><b>Change delivery days</b><div class="mu sm">Applies from the next day before cut-off</div></div>
+<div class="wr">Changes allowed till 10:00 AM on 7 Dec. You'll have 12 thalis for 13 scheduled days before validity ends, so this skip won't lapse any thali.</div>
+<button class="btn">Save changes</button></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="24" data-g="Account &amp; more" data-t="Refer &amp; earn" data-d="Unique code, share via WhatsApp/SMS, credits usable at checkout (per-order cap and expiry set by admin), referral history." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Refer &amp; earn</div>
+<div style="background:var(--tur);border-radius:16px;padding:14px;text-align:center"><svg height="40" width="40"><use href="#i-gift"></use></svg><b style="display:block;font-size:17px">Give ₹50, get ₹50</b><div class="sm">When your friend's first order is delivered, you both get credits.</div><div style="margin-top:10px;background:#fff;border-radius:10px;padding:8px;font-weight:800;letter-spacing:2px;border:1.5px dashed #1c1d21">KK-PRIYA77</div></div>
+<button class="btn">Share on WhatsApp</button>
+<div class="cd rw sp"><div><div class="mu sm">Credit balance</div><b style="font-size:18px">₹150</b></div><div class="mu sm" style="text-align:right">Use up to ₹50 per order<br/>Expires 31 Jan</div></div>
+<b>Your referrals</b>
+<div class="cd sm"><div class="ln"><span>Rahul M.</span><span class="ok">Reward earned · ₹50</span></div><div class="ln"><span>Nidhi P.</span><span class="ok">Reward earned · ₹50</span></div><div class="ln"><span>Karan D.</span><span class="mu">Joined · awaiting first order</span></div></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="25" data-g="Account &amp; more" data-t="Notifications" data-d="Order updates, subscription dispatch, skip cut-off and expiry reminders, referral rewards, refunds and admin announcements." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Notifications</div>
+<div class="cd" style="border-left:3px solid var(--red)"><b>Your thali is on the way</b><div class="mu sm">Mahesh picked up order #KK-20481 · 2 min ago</div></div>
+<div class="cd" style="border-left:3px solid var(--red)"><b>Skip tomorrow's lunch?</b><div class="mu sm">Skip window closes at 10:00 AM · 1 h ago</div></div>
+<div class="cd"><b>Subscription ends in 3 days</b><div class="mu sm">4 thalis left, valid till 23 Dec · Yesterday</div></div>
+<div class="cd"><b>You earned ₹50 credits</b><div class="mu sm">Rahul placed his first order · 2 days ago</div></div>
+<div class="cd"><b>Refund processed</b><div class="mu sm">₹384 refunded to your UPI · 3 days ago</div></div>
+<div class="cd"><b>Ondhiyu is back this Sunday</b><div class="mu sm">From the kitchen · 4 days ago</div></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="26" data-g="Account &amp; more" data-t="Help &amp; support" data-d="Call and WhatsApp click-to-chat, status of reported issues with the kitchen&#x27;s reply, and admin-managed FAQs." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Help &amp; support</div>
+<div class="grid2"><div class="cd" style="text-align:center"><svg height="22" style="color:var(--red)" width="22"><use href="#i-phone"></use></svg><b style="display:block">Call us</b><span class="mu sm">079 4000 1234</span></div><div class="cd" style="text-align:center"><svg height="22" style="color:var(--veg)" width="22"><use href="#i-phone"></use></svg><b style="display:block">WhatsApp</b><span class="mu sm">Chat with us</span></div></div>
+<b>My issue reports</b>
+<div class="cd sm"><div class="rw sp"><b>#KK-20398 · Missing item</b><span class="chip" style="background:#e9f6ec;color:#14632b">Resolved</span></div><div class="mu">Kitchen: "Sorry! ₹30 refunded for the chaas."</div></div>
+<b>FAQs</b>
+<div class="cd sm"><div class="ln"><span>How do I skip a subscription meal?</span><span>›</span></div><div class="ln"><span>What are the delivery hours?</span><span>›</span></div><div class="ln"><span>How do refunds work?</span><span>›</span></div><div class="ln"><span>Which areas do you deliver to?</span><span>›</span></div></div></div></div></div></div>
+<div class="scr" data-app="c" data-n="27" data-g="Account &amp; more" data-t="My account" data-d="Profile, saved addresses with map pin, subscriptions, referrals, notification settings, legal pages, delete account and logout." hidden><div class="ph"><div class="s"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">My account</div>
+<div class="cd rw"><div class="av" style="background:var(--red);color:#fff">PS</div><div style="flex:1"><b>Priya Shah</b><div class="mu sm">+91 98250 12345</div></div><span class="b sm" style="color:var(--red)">Edit</span></div>
+<div class="cd sm"><div class="ln"><span>Saved addresses (Home, Office)</span><span>›</span></div><div class="ln"><span>My subscriptions</span><span>›</span></div><div class="ln"><span>Refer &amp; earn · ₹150</span><span>›</span></div><div class="ln"><span>Help &amp; support</span><span>›</span></div></div>
+<div class="cd sm"><div class="ln"><span>Order updates</span><span class="tg on" style="transform:scale(.75)"></span></div><div class="ln"><span>Skip reminders</span><span class="tg on" style="transform:scale(.75)"></span></div><div class="ln"><span>Offers &amp; announcements</span><span class="tg" style="transform:scale(.75)"></span></div></div>
+<div class="cd sm"><div class="ln"><span>About us · Terms · Privacy</span><span>›</span></div><div class="ln" style="color:var(--red)"><span>Delete account</span><span>›</span></div><div class="ln b"><span>Logout</span><span>›</span></div></div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-menu"></use></svg>Menu</div><div><svg><use href="#i-cal"></use></svg>Subscription</div><div class="on"><svg><use href="#i-user"></use></svg>Account</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="1" data-g="Joining" data-t="Splash &amp; walkthrough" data-d="Brand screen and three slides: flexible duty hours, payouts every 8 hours and monthly rewards." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="text-align:center;align-items:center">
+<div style="margin-top:20px;width:190px;height:190px;border-radius:50%;background:#1f242c;display:grid;place-items:center;color:var(--tur)"><svg height="120" width="120"><use href="#i-scooter"></use></svg></div>
+<div style="font-family:'Baloo 2';font-size:26px;font-weight:800;line-height:1.1">Kathiawadi Kitchen<br/><span style="color:var(--tur)">Delivery Partner</span></div>
+<div class="mu">Work your own hours. Get paid every 8 hours. Earn a free thali every month.</div>
+<div class="rw" style="gap:6px"><i style="width:22px;height:8px;border-radius:9px;background:var(--tur)"></i><i style="width:8px;height:8px;border-radius:9px;background:#3a3f49"></i><i style="width:8px;height:8px;border-radius:9px;background:#3a3f49"></i></div>
+<button class="btn y mt">Get started</button><span class="mu b">Already registered? Login</span></div></div></div></div>
+<div class="scr" data-app="d" data-n="2" data-g="Joining" data-t="Registration" data-d="Mobile OTP, profile photo, personal details, vehicle type and vehicle number." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Your details</div>
+<div class="mu sm">Step 1 of 3 · Mobile verified ✓</div><div class="bar"><i style="width:33%"></i></div>
+<div class="rw"><div class="av" style="width:54px;height:54px">+</div><span class="mu sm">Add profile photo (camera or gallery)</span></div>
+<div><span class="lb">Full name</span><div class="in1">Mahesh Rathod</div></div>
+<div><span class="lb">Address &amp; city</span><div class="in1">Vejalpur, Ahmedabad</div></div>
+<div><span class="lb">Vehicle type</span><div class="rw" style="gap:6px"><span class="chip">Bike</span><span class="chip on">Scooter</span><span class="chip">Bicycle</span></div></div>
+<div><span class="lb">Vehicle number</span><div class="in1">GJ01 AB 4521</div></div>
+<button class="btn y mt">Next: documents</button></div></div></div></div>
+<div class="scr" data-app="d" data-n="3" data-g="Joining" data-t="Documents (KYC)" data-d="Driving licence number with front/back photos, and vehicle RC number with photo." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Documents</div>
+<div class="mu sm">Step 2 of 3 · Verified manually by our team</div><div class="bar"><i style="width:66%"></i></div>
+<b>Driving licence</b>
+<div class="in1">GJ01 20190012345</div>
+<div class="up"><div class="ph2"></div><div style="flex:1"><b class="sm">Front side</b><div class="ok sm">Uploaded</div></div></div>
+<div class="up"><div class="ph2" style="background:linear-gradient(135deg,#6b7a8c,#3d4856)"></div><div style="flex:1"><b class="sm">Back side</b><div class="ok sm">Uploaded</div></div></div>
+<b>Vehicle RC</b>
+<div class="in1">GJ01AB4521</div>
+<div class="up"><div class="ph2" style="background:linear-gradient(135deg,#a8873b,#6e5520)"></div><div style="flex:1"><b class="sm">RC photo</b><div class="mu sm">Tap to upload</div></div></div>
+<button class="btn y mt">Next: bank details</button></div></div></div></div>
+<div class="scr" data-app="d" data-n="4" data-g="Joining" data-t="Bank details" data-d="Account details entered twice for confirmation; bank and branch auto-filled from IFSC. Used for RazorpayX payouts." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Bank details for payouts</div>
+<div class="mu sm">Step 3 of 3</div><div class="bar"><i style="width:100%"></i></div>
+<div><span class="lb">Account holder name</span><div class="in1">MAHESH K RATHOD</div></div>
+<div><span class="lb">Account number</span><div class="in1">•••• •••• 4590</div></div>
+<div><span class="lb">Confirm account number</span><div class="in1">•••• •••• 4590 <span class="ok">✓</span></div></div>
+<div><span class="lb">IFSC code</span><div class="in1">SBIN0003012</div></div>
+<div class="cd sm"><b>State Bank of India</b><div class="mu">Vejalpur branch, Ahmedabad (auto-filled from IFSC)</div></div>
+<div class="rw sm"><span style="width:18px;height:18px;border-radius:5px;background:var(--tur);color:#1c1d21;display:grid;place-items:center;font-size:12px;flex:none">✓</span>I accept the Delivery Partner Terms</div>
+<button class="btn y mt">Submit application</button></div></div></div></div>
+<div class="scr" data-app="d" data-n="5" data-g="Joining" data-t="Application status" data-d="Pending, approved or rejected (with reason and resubmit). Only approved partners can go online." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="text-align:center;align-items:center">
+<div style="margin-top:24px;width:130px;height:130px;border-radius:50%;background:#3a2f12;display:grid;place-items:center"><div style="width:84px;height:84px;border-radius:50%;background:var(--tur);color:#1c1d21;display:grid;place-items:center;font-size:36px;font-weight:800"><svg height="44" viewbox="0 0 24 24" width="44"><circle cx="12" cy="12" fill="none" r="9" stroke="#1c1d21" stroke-width="2.4"></circle><path d="M12 7v5l3.5 2" fill="none" stroke="#1c1d21" stroke-linecap="round" stroke-width="2.4"></path></svg></div></div>
+<h3 style="font-size:24px">Application under review</h3>
+<div class="mu">Our team is checking your DL and RC. You'll get a notification once it's approved, usually within 24 hours.</div>
+<div class="cd sm" style="width:100%;text-align:left"><div class="ln"><span>Personal details</span><span class="ok">Submitted</span></div><div class="ln"><span>Driving licence</span><span style="color:var(--tur)">In review</span></div><div class="ln"><span>Vehicle RC</span><span style="color:var(--tur)">In review</span></div><div class="ln"><span>Bank details</span><span class="ok">Submitted</span></div></div>
+<div class="wr" style="text-align:left;width:100%">If rejected, you'll see the reason here and can correct and resubmit.</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="6" data-g="On duty" data-t="Home &amp; duty status" data-d="Online/offline toggle (try it), live location while online, today&#x27;s summary, cash in hand against the limit, and monthly reward progress." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="rw sp"><div class="rw"><div class="av">MR</div><div><b>Hi, Mahesh</b><div class="mu sm" id="dst">You're online · receiving orders</div></div></div><div aria-checked="true" class="tg on" id="duty" role="switch" tabindex="0"></div></div>
+<div class="map" style="height:130px"><svg preserveaspectratio="xMidYMid slice" viewbox="0 0 280 200"><use href="#m-city"></use><circle cx="140" cy="100" fill="rgba(244,180,0,.12)" r="60" stroke="#f4b400" stroke-dasharray="4 4"></circle><circle cx="140" cy="100" fill="#1b1f27" r="9"></circle><text fill="#fff" font-size="10" font-weight="700" text-anchor="middle" x="140" y="104">K</text><g transform="translate(175 120)"><circle class="pulse" fill="rgba(244,180,0,.35)" r="12"></circle><circle fill="#f4b400" r="7"></circle></g></svg></div>
+<b>Today</b>
+<div class="grid2"><div class="st"><b>9</b><span>Orders delivered</span></div><div class="st"><b>₹486</b><span>Earnings</span></div><div class="st"><b>6h 40m</b><span>Online today</span></div><div class="st"><b style="color:var(--tur)">₹318</b><span>Cash in hand</span></div></div>
+<div class="cd"><div class="rw sp sm"><b>Monthly reward</b><span>162 / 200 hrs</span></div><div class="bar" style="margin:6px 0"><i style="width:81%"></i></div><div class="mu sm">38 more online hours for a free Deluxe Thali</div></div>
+<div class="mu sm">Cash limit ₹2,000 · location shared only while online</div></div>
+<div class="bn"><div class="on"><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-wallet"></use></svg>Wallet</div><div><svg><use href="#i-list"></use></svg>Trips</div><div><svg><use href="#i-user"></use></svg>Profile</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="7" data-g="On duty" data-t="New order request" data-d="Sent to all online riders within the admin radius, with pickup/drop distance, earning, payment mode and countdown. First to accept wins." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="map" style="height:250px;border-radius:0;opacity:.85"><svg preserveaspectratio="xMidYMid slice" viewbox="0 0 280 200"><use href="#m-city"></use><path d="M140 100 H178 V40" fill="none" stroke="#1b1f27" stroke-width="4"></path><circle cx="140" cy="100" fill="#1b1f27" r="9"></circle><text fill="#fff" font-size="10" font-weight="700" text-anchor="middle" x="140" y="104">K</text><g transform="translate(178 40)"><use color="#b5202a" height="26" href="#i-pin" width="26" x="-13" y="-26"></use></g></svg></div>
+<div class="sh" style="margin-top:-24px;position:relative;flex:1"><div class="rw sp"><div><div class="mu sm">New order request</div><b style="font-size:22px;color:var(--tur)">₹52 earning</b></div><div class="cnt" id="cnt">25</div></div>
+<div class="cd sm"><div class="rw"><b style="color:var(--tur)">●</b><div><b>Pickup · Kathiawadi Kitchen</b><div class="mu">1.2 km from you</div></div></div><div class="rw" style="margin-top:8px"><b style="color:var(--red)">●</b><div><b>Drop · Satellite 380015</b><div class="mu">4.5 km from kitchen</div></div></div></div>
+<div class="rw sp sm"><span class="chip">3 items</span><span class="chip" style="background:#3a2f12;color:#f4d27a">COD · collect ₹384</span><span class="mu">₹25 + ₹6/km</span></div>
+<div class="grid2 mt"><button class="btn o" style="color:#9da1a9">Ignore</button><button class="btn y">Accept</button></div>
+<div class="mu sm" style="text-align:center">First to accept gets the order</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="8" data-g="On duty" data-t="Go to kitchen &amp; pickup" data-d="Google Maps navigation, order ID to show at reception, live order status from the kitchen, then marked &quot;Picked up&quot;." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="map" style="height:170px;border-radius:0"><svg preserveaspectratio="xMidYMid slice" viewbox="0 0 280 200"><use href="#m-city"></use><path d="M220 140 H178 V100 H140" fill="none" stroke="#f4b400" stroke-width="5"></path><circle cx="140" cy="100" fill="#1b1f27" r="10"></circle><text fill="#fff" font-size="10" font-weight="700" text-anchor="middle" x="140" y="104">K</text><g transform="translate(220 140)"><circle fill="#f4b400" r="11"></circle><use color="#1b1f27" height="16" href="#i-scooter" width="16" x="-8" y="-8"></use></g></svg></div>
+<div class="bd" style="padding-top:12px"><div class="rw sp"><b style="font-size:16px">Go to kitchen</b><span class="chip on">Navigate</span></div>
+<div class="cd sm"><b>Kathiawadi Kitchen</b><div class="mu">Shop 4, Shyamal Cross Road · 1.2 km · 5 min</div></div>
+<div class="cd" style="text-align:center"><div class="mu sm">Show this at the reception</div><div class="big" style="color:var(--tur)">#KK-20486</div><div class="sm">Order status: <b style="color:var(--tur)">Ready for pickup</b></div></div>
+<div class="tl"><div class="dn">Accepted · 12:31</div><div class="nw" style="--x:0"><b>Arrived at kitchen</b></div><div>Picked up</div><div>Delivered</div></div>
+<button class="btn y mt">I've arrived at the kitchen</button></div></div></div></div>
+<div class="scr" data-app="d" data-n="9" data-g="On duty" data-t="Deliver to customer" data-d="Navigation, customer call button, delivery instructions, items and COD amount, and an &quot;Unable to deliver&quot; report." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="map" style="height:220px;border-radius:0"><svg preserveaspectratio="xMidYMid slice" viewbox="0 0 280 200"><use href="#m-city"></use><path d="M140 100 V72 H178 V40" fill="none" stroke="#f4b400" stroke-width="5"></path><g transform="translate(178 40)"><use color="#b5202a" height="26" href="#i-pin" width="26" x="-13" y="-26"></use></g><g transform="translate(140 86)"><circle fill="#f4b400" r="11"></circle><use color="#1b1f27" height="16" href="#i-scooter" width="16" x="-8" y="-8"></use></g></svg></div>
+<div class="bd" style="padding-top:12px"><div class="rw sp"><b style="font-size:16px">Deliver to customer</b><span class="mu sm">4.5 km · 12 min</span></div>
+<div class="cd rw"><div class="av" style="background:#3a2f12;color:#f4d27a">PS</div><div style="flex:1"><b>Priya Shah</b><div class="mu sm">B-204, Shivalik Residency, Satellite</div></div><div style="width:36px;height:36px;border-radius:50%;background:var(--veg);color:#fff;display:grid;place-items:center"><svg height="18" width="18"><use href="#i-phone"></use></svg></div></div>
+<div class="wr">Instructions: "Call on arrival"</div>
+<div class="cd sm"><div class="ln"><span>Deluxe Lunch Thali × 2</span><span></span></div><div class="ln"><span>Bajra Rotla (2) × 1</span><span></span></div><div class="ln t"><span>Collect cash</span><span style="color:var(--tur)">₹384</span></div></div>
+<div class="grid2 mt"><button class="btn o" style="color:#9da1a9">Unable to deliver</button><button class="btn y">Arrived</button></div></div></div></div></div>
+<div class="scr" data-app="d" data-n="10" data-g="On duty" data-t="Delivery OTP &amp; COD" data-d="Delivery completes only with the customer&#x27;s OTP. For COD, the rider confirms the cash collected." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Complete delivery</div>
+<b>Enter the customer's delivery OTP</b>
+<div class="otp"><span class="f">5</span><span class="f">2</span><span class="f">9</span><span class="f">1</span></div>
+<div class="ok sm">OTP matched</div>
+<div class="cd"><div class="rw sp"><b>Cash on delivery</b><b style="color:var(--tur);font-size:18px">₹384</b></div><div class="rw sm" style="margin-top:8px"><span style="width:18px;height:18px;border-radius:5px;background:var(--tur);color:#1c1d21;display:grid;place-items:center;font-size:12px;flex:none">✓</span>I have collected ₹384 in cash</div></div>
+<div class="mu sm">This amount will be added to your cash in hand and adjusted in your next payout.</div>
+<div class="cd sm"><b>Report a problem</b><div class="rw" style="gap:6px;flex-wrap:wrap;margin-top:6px"><span class="chip">Customer not reachable</span><span class="chip">Wrong address</span><span class="chip">Refused order</span></div></div>
+<button class="btn y mt">Mark as delivered</button></div></div></div></div>
+<div class="scr" data-app="d" data-n="11" data-g="On duty" data-t="Delivery complete" data-d="Earning breakdown (base fare + per-km), updated cash in hand and the next payout time." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd" style="text-align:center;align-items:center;justify-content:center">
+<div style="width:120px;height:120px;border-radius:50%;background:#173322;display:grid;place-items:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--veg);color:#fff;display:grid;place-items:center;font-size:40px;font-weight:800">✓</div></div>
+<h3 style="font-size:26px">Delivered!</h3><div class="mu">Order #KK-20486 · 12:46 PM</div>
+<div class="cd" style="width:100%"><div class="ln"><span class="mu">Base fare</span><span>₹25.00</span></div><div class="ln"><span class="mu">Distance 4.5 km × ₹6</span><span>₹27.00</span></div><div class="ln t"><span>You earned</span><span style="color:var(--tur)">₹52.00</span></div></div>
+<div class="cd sm" style="width:100%"><div class="ln"><span>Cash in hand now</span><b>₹702</b></div><div class="ln"><span>Next payout</span><b>2:00 PM</b></div></div>
+<button class="btn y" style="margin-top:8px">Back to orders</button></div></div></div></div>
+<div class="scr" data-app="d" data-n="12" data-g="Earnings &amp; rewards" data-t="Earnings" data-d="Earnings for today, the week and the month, a daily chart and order-wise breakdown with distance." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">Earnings</div>
+<div class="tb"><span>Today</span><span class="on">This week</span><span>Month</span></div>
+<div class="cd" style="text-align:center"><div class="mu sm">16 – 22 Nov</div><div class="big" style="color:var(--tur);font-size:34px">₹3,284</div><div class="mu sm">61 orders · 41 hrs online</div></div>
+<div class="cd"><div class="rw sp sm"><b>Daily</b><span class="mu">₹ earned</span></div><div class="wk" style="display:flex;align-items:flex-end;gap:6px;height:90px;margin-top:8px"></div><div style="display:flex;gap:6px;font-size:10px;color:#9da1a9;text-align:center;margin-top:4px"><span style="flex:1">M</span><span style="flex:1">T</span><span style="flex:1">W</span><span style="flex:1">T</span><span style="flex:1">F</span><span style="flex:1">S</span><span style="flex:1">S</span></div></div>
+<b>Order-wise</b>
+<div class="cd sm"><div class="ln"><span>#KK-20486 · 4.5 km</span><b>₹52</b></div><div class="ln"><span>#KK-20409 · 2.1 km</span><b>₹38</b></div><div class="ln"><span>#KK-20401 · 6.0 km</span><b>₹61</b></div></div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div class="on"><svg><use href="#i-wallet"></use></svg>Wallet</div><div><svg><use href="#i-list"></use></svg>Trips</div><div><svg><use href="#i-user"></use></svg>Profile</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="13" data-g="Earnings &amp; rewards" data-t="Wallet &amp; 8-hourly payouts" data-d="Earnings minus COD cash = net payable, auto-transferred every 8 hours via RazorpayX. History with UTR, failed-payout retry, and cash deposit dues." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">Wallet &amp; payouts</div>
+<div class="cd"><div class="ln"><span class="mu">Earnings balance</span><b>₹486.00</b></div><div class="ln"><span class="mu">Cash in hand (COD)</span><b style="color:#ff8a80">−₹318.00</b></div><div class="ln t"><span>Net payable</span><span style="color:var(--tur)">₹168.00</span></div></div>
+<div class="rw cd"><div class="ring" style="--p:62%"><span>5h</span></div><div><b>Next automatic payout</b><div class="mu sm">2:00 PM to SBI •••4590 via RazorpayX</div><div class="mu sm">Cycles: 6 AM · 2 PM · 10 PM</div></div></div>
+<b>Payout history</b>
+<div class="cd sm"><div class="ln"><span>Today 6:00 AM</span><span class="ok">₹412 · Paid</span></div><div class="mu" style="font-size:11px">UTR 432918840211</div>
+<div class="ln"><span>Yesterday 10:00 PM</span><span class="ok">₹276 · Paid</span></div>
+<div class="ln"><span>Yesterday 2:00 PM</span><span style="color:#ff8a80">₹190 · Failed</span></div><div class="mu" style="font-size:11px">Retried in the next cycle · Paid</div></div>
+<div class="wr">If cash in hand is more than your earnings, deposit the balance at the kitchen. Reception records it instantly.</div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div class="on"><svg><use href="#i-wallet"></use></svg>Wallet</div><div><svg><use href="#i-list"></use></svg>Trips</div><div><svg><use href="#i-user"></use></svg>Profile</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="14" data-g="Earnings &amp; rewards" data-t="Monthly rewards" data-d="Online-hours progress against the admin&#x27;s target, free thali reward code to claim at the kitchen, and reward history." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Rewards</div>
+<div class="cd" style="text-align:center"><div class="ring" style="--p:81%;margin:4px auto;width:90px;height:90px;font-size:20px"><span>81%</span></div><b>162 of 200 online hours</b><div class="mu sm">November target · 38 hrs to go</div></div>
+<div style="background:var(--tur);color:#1c1d21;border-radius:16px;padding:12px;display:flex;gap:10px;align-items:center"><svg height="64" style="flex:none" width="64"><use href="#thali"></use></svg><div style="flex:1"><b>Free Deluxe Thali</b><div class="sm">October reward · valid till 30 Nov</div><div style="margin-top:6px;background:#fff;border-radius:8px;padding:4px 8px;font-weight:800;letter-spacing:2px;display:inline-block">RW-8842</div></div></div>
+<div class="mu sm">Show the code at the kitchen to claim. Reception marks it as redeemed.</div>
+<b>Reward history</b>
+<div class="cd sm"><div class="ln"><span>October · Deluxe Thali</span><span style="color:var(--tur)">Ready to claim</span></div><div class="ln"><span>September · Deluxe Thali</span><span class="ok">Redeemed</span></div><div class="ln"><span>August · 184 hrs</span><span class="mu">Target missed</span></div></div></div></div></div></div>
+<div class="scr" data-app="d" data-n="15" data-g="Earnings &amp; rewards" data-t="Trip history &amp; ratings" data-d="Completed and cancelled trips with distance, earning and payment mode, filters by date, and the rider&#x27;s average rating." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">Trip history<span class="r"><span class="chip">Nov ▾</span></span></div>
+<div class="cd sm"><div class="rw sp"><b>#KK-20486</b><b style="color:var(--tur)">₹52</b></div><div class="mu">23 Nov · 12:46 PM · 4.5 km · COD ₹384</div></div>
+<div class="cd sm"><div class="rw sp"><b>#KK-20409</b><b style="color:var(--tur)">₹38</b></div><div class="mu">23 Nov · 12:05 PM · 2.1 km · Prepaid</div></div>
+<div class="cd sm"><div class="rw sp"><b>#KK-20401</b><b style="color:var(--tur)">₹61</b></div><div class="mu">23 Nov · 11:32 AM · 6.0 km · Prepaid</div></div>
+<div class="cd sm" style="opacity:.7"><div class="rw sp"><b>#KK-20388</b><span style="color:#ff8a80">Cancelled</span></div><div class="mu">22 Nov · 9:14 PM · Customer cancelled before pickup</div></div>
+<div class="cd sm"><div class="rw sp"><b>#KK-20380</b><b style="color:var(--tur)">₹44</b></div><div class="mu">22 Nov · 8:40 PM · 3.2 km · COD ₹290</div></div>
+<div class="cd rw sp"><div><b>My rating</b><div class="mu sm">From 412 deliveries</div></div><b style="font-size:20px;color:var(--tur)">★ 4.8</b></div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-wallet"></use></svg>Wallet</div><div class="on"><svg><use href="#i-list"></use></svg>Trips</div><div><svg><use href="#i-user"></use></svg>Profile</div></div></div></div></div>
+<div class="scr" data-app="d" data-n="16" data-g="Earnings &amp; rewards" data-t="Notifications" data-d="New requests (loud alert even in background), cancellations, payouts, deposits, rewards, approval and admin announcements." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah"><svg><use href="#i-back"></use></svg>Notifications</div>
+<div class="cd" style="border-left:3px solid var(--tur)"><b>Payout of ₹412 credited</b><div class="mu sm">SBI •••4590 · 6:00 AM</div></div>
+<div class="cd" style="border-left:3px solid var(--tur)"><b>Cash deposit recorded</b><div class="mu sm">₹1,200 received at the kitchen · Yesterday</div></div>
+<div class="cd"><b>Order cancelled</b><div class="mu sm">#KK-20388 was cancelled before pickup</div></div>
+<div class="cd"><b>Reward unlocked</b><div class="mu sm">You earned a free Deluxe Thali for October</div></div>
+<div class="cd"><b>Application approved</b><div class="mu sm">Welcome aboard! You can now go online</div></div>
+<div class="cd"><b>Extended dinner hours</b><div class="mu sm">Kitchen open till 11 PM this weekend · Admin</div></div></div></div></div></div>
+<div class="scr" data-app="d" data-n="17" data-g="Earnings &amp; rewards" data-t="Profile &amp; account" data-d="Profile, documents and bank details (updates go for re-approval), support, legal pages, delete account and logout." hidden><div class="ph"><div class="s dk"><div class="sb"><span>9:41</span><i></i><em>▮▮▮</em></div>
+<div class="bd"><div class="ah">Profile</div>
+<div class="cd rw"><div class="av" style="width:48px;height:48px">MR</div><div style="flex:1"><b>Mahesh Rathod</b><div class="mu sm">+91 98790 55678 · Scooter GJ01 AB 4521</div></div></div>
+<div class="cd sm"><div class="ln"><span>Documents (DL, RC)</span><span class="ok">Verified ›</span></div><div class="ln"><span>Bank details</span><span class="mu">SBI •••4590 ›</span></div><div class="mu" style="font-size:11px">Changes need re-approval before the next payout</div></div>
+<div class="cd sm"><div class="ln"><span>Help &amp; support (call, WhatsApp)</span><span>›</span></div><div class="ln"><span>FAQs</span><span>›</span></div><div class="ln"><span>Terms &amp; Privacy Policy</span><span>›</span></div></div>
+<div class="cd sm"><div class="ln" style="color:#ff8a80"><span>Delete account</span><span>›</span></div><div class="mu" style="font-size:11px">Allowed when there are no pending dues or payouts</div><div class="ln b"><span>Logout</span><span>›</span></div></div></div>
+<div class="bn"><div><svg><use href="#i-home"></use></svg>Home</div><div><svg><use href="#i-wallet"></use></svg>Wallet</div><div><svg><use href="#i-list"></use></svg>Trips</div><div class="on"><svg><use href="#i-user"></use></svg>Profile</div></div></div></div></div>
+
+ </div></section>
+ <section class="info">
+  <div class="grpn" id="grp"></div>
+  <h2 id="ttl"></h2>
+  <p id="dsc"></p>
+  <div class="count" id="cnt2"></div>
+  <div class="prog"><i id="bar"></i></div>
+  <div class="navs"><button class="nb" id="prev"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Previous</button><button class="nb pri" id="next">Next<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+  <button class="pick-d" id="pickd">All screens</button>
+  <div class="kbd">Tip: use the ← → keys, or tap items inside the phone to try them.</div>
+  <div class="note">Brand name, dishes, prices, people and addresses are sample content. Final visuals will follow the approved brand guidelines.</div>
+ </section>
+</div>
+<nav class="pager" aria-label="Screen navigation">
+ <button class="nb" id="mprev" aria-label="Previous screen"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+ <button class="pick" id="pick"><span id="pickt"></span><svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+ <button class="nb pri" id="mnext" aria-label="Next screen"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</nav>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="All screens"><div class="box"><div class="top"><span id="sheett">All screens</span><button id="close">Close</button></div><nav class="idx" id="idx2"></nav></div></div>
+<script>
+
+{
+  const star = '<svg width="26" height="26"><use href="#i-star"/></svg>';
+  document.querySelectorAll('.stars').forEach(s => {
+    const n = +s.dataset.n;
+    s.innerHTML = [1,2,3,4,5].map(i => `<span data-i="${i}" style="cursor:pointer;opacity:${i<=n?1:.25}">${star}</span>`).join('');
+    s.addEventListener('click', e => { const t = e.target.closest('[data-i]'); if(!t) return; s.querySelectorAll('[data-i]').forEach(x => x.style.opacity = +x.dataset.i <= +t.dataset.i ? 1 : .25); });
+  });
+
+  // weekly earnings bars
+  const wk = [412, 520, 468, 390, 610, 520, 364];
+  const mx = Math.max(...wk);
+  document.querySelectorAll('.wk').forEach(w => w.innerHTML = wk.map(v => `<div style="flex:1;height:${Math.round(v/mx*100)}%;background:#f4b400;border-radius:5px 5px 2px 2px" title="₹${v}"></div>`).join(''));
+
+  // tabs, chips (segmented)
+  document.querySelectorAll('.tb').forEach(t => t.addEventListener('click', e => { const sp = e.target.closest('span'); if(!sp) return; t.querySelectorAll('span').forEach(x => x.classList.toggle('on', x === sp)); }));
+  document.querySelectorAll('.days').forEach(d => d.addEventListener('click', e => { const c = e.target.closest('.chip'); if(c) c.classList.toggle('on'); }));
+
+  // payment method
+  document.querySelectorAll('.pay').forEach(p => p.addEventListener('click', e => { const c = e.target.closest('.cd'); if(!c) return; p.querySelectorAll('.cd').forEach(x => { x.classList.toggle('sel', x === c); x.style.borderColor = x === c ? 'var(--red)' : ''; }); }));
+
+  // qty steppers
+  document.querySelectorAll('.qty').forEach(q => q.addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; const s = q.querySelector('span'); let v = +s.textContent + (b.textContent === '+' ? 1 : -1); s.textContent = Math.max(1, v); }));
+  document.querySelectorAll('.add').forEach(a => a.addEventListener('click', () => { const q = document.createElement('span'); q.className = 'qty'; q.innerHTML = '<button>−</button><span>1</span><button>+</button>'; q.addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; const s = q.querySelector('span'); s.textContent = Math.max(1, +s.textContent + (b.textContent === '+' ? 1 : -1)); }); a.replaceWith(q); }));
+
+  // subscription calendar: Dec 2026 starts Tuesday
+  const cal = document.getElementById('cal');
+  const bal = document.getElementById('bal'), skp = document.getElementById('skp');
+  const heads = ['M','T','W','T','F','S','S'].map(h => `<b>${h}</b>`).join('');
+  let cells = '<span class="x"></span>';
+  const delivered = [1,2], skipped = [3];
+  for (let d = 1; d <= 31; d++) {
+        const wd = (1 + d - 1) % 7; // 0=Mon
+    const weekend = wd === 5 || wd === 6;
+    let cls = weekend ? 'x' : delivered.includes(d) ? 'd' : skipped.includes(d) ? 's1' : d === 4 ? 'u' : '';
+    cells += `<span class="${cls}" data-d="${d}">${d}</span>`;
+  }
+  cal.innerHTML = heads + cells;
+  cal.addEventListener('click', e => {
+    const c = e.target.closest('span[data-d]'); if(!c || c.classList.contains('x') || c.classList.contains('d') || c.classList.contains('u')) return;
+    const nowSkip = c.classList.toggle('s1');
+    skp.textContent = +skp.textContent + (nowSkip ? 1 : -1);
+  });
+
+  // duty toggle
+  const duty = document.getElementById('duty'), dst = document.getElementById('dst');
+  const flip = () => { const on = duty.classList.toggle('on'); duty.setAttribute('aria-checked', on); dst.textContent = on ? "You're online · receiving orders" : "You're offline · go online to get orders"; };
+  duty.addEventListener('click', flip);
+  duty.addEventListener('keydown', e => { if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); flip(); } });
+
+  // request countdown
+  const cnt = document.getElementById('cnt');
+  let n = 25;
+  setInterval(() => { n = n <= 1 ? 25 : n - 1; cnt.textContent = n; }, 1000);
+}
+
+</script>
+<script>
+{
+  const NAMES = {c:'customer', d:'delivery'};
+  const all = [...document.querySelectorAll('.scr')];
+  const by = {c: all.filter(s => s.dataset.app === 'c'), d: all.filter(s => s.dataset.app === 'd')};
+  const pos = {c: 0, d: 0};
+  let app = 'c';
+  const $ = id => document.getElementById(id);
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+  const buildIdx = el => {
+    let html = '', last = '';
+    by[app].forEach((s, i) => {
+      if (s.dataset.g !== last) { last = s.dataset.g; html += `<h3>${esc(last)}</h3>`; }
+      html += `<button data-i="${i}"><i>${i + 1}</i><span>${esc(s.dataset.t)}</span></button>`;
+    });
+    el.innerHTML = html;
+  };
+
+  const fit = () => {
+    const st = $('stage'), f = $('fit');
+    const small = window.innerWidth <= 760;
+    const w = st.clientWidth - 32;
+    const h = small ? Infinity : st.clientHeight - 40;
+    const k = Math.min(small ? 1.08 : 1.12, w / 300, h / 620);
+    f.style.transform = `scale(${k})`;
+    f.style.margin = small ? `${(620 * k - 620) / 2}px ${(300 * k - 300) / 2}px` : '0';
+  };
+
+  const show = (i, push = true) => {
+    const list = by[app];
+    i = Math.max(0, Math.min(list.length - 1, i));
+    pos[app] = i;
+    all.forEach(s => { s.hidden = true; s.classList.remove('in'); });
+    const s = list[i];
+    s.hidden = false; void s.offsetWidth; s.classList.add('in');
+    $('grp').textContent = s.dataset.g;
+    $('ttl').textContent = s.dataset.t;
+    $('dsc').textContent = s.dataset.d;
+    $('cnt2').textContent = `Screen ${i + 1} of ${list.length}`;
+    $('bar').style.width = ((i + 1) / list.length * 100) + '%';
+    $('pickt').textContent = `${i + 1}/${list.length} · ${s.dataset.t}`;
+    for (const b of [$('prev'), $('mprev')]) b.disabled = i === 0;
+    for (const b of [$('next'), $('mnext')]) b.disabled = i === list.length - 1;
+    document.querySelectorAll('.idx button').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
+    const on = $('idx').querySelector('button.on');
+    if (on) on.scrollIntoView({block: 'nearest'});
+    if (push) try { history.replaceState(null, '', `#${NAMES[app]}-${i + 1}`); } catch (e) {}
+  };
+
+  const setApp = (a, i = pos[a]) => {
+    app = a;
+    document.body.dataset.app = a;
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-selected', b.dataset.app === a));
+    buildIdx($('idx')); buildIdx($('idx2'));
+    $('sheett').textContent = a === 'c' ? 'Customer App screens' : 'Delivery Partner App screens';
+    show(i);
+  };
+
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setApp(b.dataset.app)));
+  const pickFrom = e => { const b = e.target.closest('button[data-i]'); if (!b) return; show(+b.dataset.i); closeSheet(); if (window.innerWidth <= 760) window.scrollTo({top: 0, behavior: 'smooth'}); };
+  $('idx').addEventListener('click', pickFrom);
+  $('idx2').addEventListener('click', pickFrom);
+  const step = d => show(pos[app] + d);
+  $('prev').onclick = $('mprev').onclick = () => step(-1);
+  $('next').onclick = $('mnext').onclick = () => step(1);
+  const openSheet = () => { $('sheet').classList.add('open'); const on = $('idx2').querySelector('button.on'); if (on) on.scrollIntoView({block: 'center'}); };
+  const closeSheet = () => $('sheet').classList.remove('open');
+  $('pick').onclick = openSheet; $('pickd').onclick = openSheet;
+  $('close').onclick = closeSheet;
+  $('sheet').addEventListener('click', e => { if (e.target === $('sheet')) closeSheet(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSheet();
+    if (e.target.closest && e.target.closest('input,textarea')) return;
+    if (e.key === 'ArrowRight') step(1);
+    if (e.key === 'ArrowLeft') step(-1);
+  });
+  let tx = null, ty = null;
+  $('stage').addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive: true});
+  $('stage').addEventListener('touchend', e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+    tx = null;
+  });
+
+  const fromHash = () => {
+    const m = location.hash.match(/^#(customer|delivery)-(\d+)$/);
+    if (m) { const a = m[1] === 'customer' ? 'c' : 'd'; pos[a] = +m[2] - 1; setApp(a, +m[2] - 1); }
+    else setApp('c', 0);
+  };
+  window.addEventListener('hashchange', fromHash);
+  const ro = new ResizeObserver(fit); ro.observe($('stage'));
+  fromHash(); fit();
+}
+</script>
+</body>
+</html>
